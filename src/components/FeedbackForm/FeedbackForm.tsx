@@ -19,7 +19,7 @@ const FeedbackForm = ({ sede }: Props) => {
       : "https://i.postimg.cc/C17qqDBj/rest-bg-2.webp";
 
   const urlReview =
-    sede === "sangilena-bga" ? "https://g.page/r/CW6s94gTIOZKEBM/review" : "https://g.page/r/CW6s94gTIOZKEBM/review";
+    sede === "sangilena-bga" ? "https://g.page/r/CW6s94gTIOZKEBM/review" : "https://g.page/r/CYzuw0E_HOJtEBE/review";
 
   const [socialSource, setSocialSource] = useState<string[]>([]);
   const [howMet, setHowMet] = useState("");
@@ -27,6 +27,7 @@ const FeedbackForm = ({ sede }: Props) => {
   const [showImprovementBox, setShowImprovementBox] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -46,6 +47,8 @@ const FeedbackForm = ({ sede }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
+
     const formElement = e.currentTarget;
     const formData = new FormData(formElement);
     const data = Object.fromEntries(formData.entries());
@@ -76,30 +79,18 @@ const FeedbackForm = ({ sede }: Props) => {
     }
 
     try {
-      await axiosInstance.post("/feedback", payload);
-      // alert("Formulario enviado correctamente. Por favor revisar su bandeja de entrada y su carpeta de spam.");
-
-      // Reset
-      // formElement.reset();
-      // setRating(0);
-      // setHowMet("");
-      // setSocialSource("");
-      // setShowImprovementBox(false);
-      // setShowOutput(false);
-      setErrors({});
-
-      // ✅ Redirección a URL externa
-      // window.location.href = urlReview;
-
-      // ✅ Redirección a Modal
       setShowModal(true);
 
-      // setTimeout(() => {
+      await axiosInstance.post("/feedback", payload);
+      setErrors({});
+
       window.location.href = urlReview;
-      // }, 2000); // 2 segundos
     } catch (err) {
       alert("Error al enviar el formulario.");
       console.error(err);
+    } finally {
+      setIsLoading(false); // ✅ Ocultar spinner
+      setShowModal(false);
     }
   };
 
@@ -112,7 +103,7 @@ const FeedbackForm = ({ sede }: Props) => {
       </div>
       <form onSubmit={handleSubmit}>
         <aside>
-          <h1>QUEREMOS SABER TU OPINION</h1>
+          <h1>QUEREMOS SABER TU OPINIÓN</h1>
           <p className="welcome">
             ¡Gracias por enriquecer nuestra experiencia con tu opinión!
             <br />
@@ -219,9 +210,12 @@ const FeedbackForm = ({ sede }: Props) => {
           </label>
         </div>
 
-        <div>
-          <button type="submit">Continuar</button>
+        <div className="button-spinner-container">
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Enviando..." : "Continuar"}
+          </button>
         </div>
+
         <br />
 
         <p className="disclaimer">
@@ -240,6 +234,7 @@ const FeedbackForm = ({ sede }: Props) => {
 
       <ModalComp isOpen={showModal} onClose={() => setShowModal(false)} title="Mensaje">
         <p>¡Formulario enviado correctamente! Revisa tu correo y carpeta de spam.</p>
+        <div className="button-spinner-container">{isLoading ? <span className="spinner"></span> : ""}</div>
       </ModalComp>
     </div>
   );
