@@ -28,6 +28,9 @@ const FeedbackForm = ({ sede }: Props) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [modalMessage, setModalMessage] = useState(
+    "¡Formulario enviado correctamente! Revisa tu correo y carpeta de spam."
+  );
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -47,7 +50,6 @@ const FeedbackForm = ({ sede }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
 
     const formElement = e.currentTarget;
     const formData = new FormData(formElement);
@@ -68,7 +70,6 @@ const FeedbackForm = ({ sede }: Props) => {
     fieldsToValidate.forEach((field) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const value = field === "rating" ? rating.toString() : (data as any)[field];
-
       const error = validateField(field, value);
       if (error) newErrors[field] = error;
     });
@@ -78,18 +79,26 @@ const FeedbackForm = ({ sede }: Props) => {
       return;
     }
 
+    // ✅ Activar loading solo si pasa la validación
+    setIsLoading(true);
+
     try {
       setShowModal(true);
-
       await axiosInstance.post("/feedback", payload);
       setErrors({});
 
-      window.location.href = urlReview;
+      if (rating >= 4) {
+        window.location.href = urlReview;
+      } else {
+        setModalMessage("¡Gracias por tu opinión! Trabajaremos para mejorar tu experiencia.");
+        setShowModal(true);
+        window.location.href = "/gracias";
+      }
     } catch (err) {
       alert("Error al enviar el formulario.");
       console.error(err);
     } finally {
-      setIsLoading(false); // ✅ Ocultar spinner
+      setIsLoading(false);
       setShowModal(false);
     }
   };
@@ -233,7 +242,8 @@ const FeedbackForm = ({ sede }: Props) => {
       </form>
 
       <ModalComp isOpen={showModal} onClose={() => setShowModal(false)} title="Mensaje">
-        <p>¡Formulario enviado correctamente! Revisa tu correo y carpeta de spam.</p>
+        {/* <p>¡Formulario enviado correctamente! Revisa tu correo y carpeta de spam.</p> */}
+        <p>{modalMessage}</p>
         <div className="button-spinner-container">{isLoading ? <span className="spinner"></span> : ""}</div>
       </ModalComp>
     </div>
